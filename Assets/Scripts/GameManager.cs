@@ -104,7 +104,6 @@ public class GameManager : MonoBehaviour
     {
         foreach(PlayerActor playerChar in playerActors)
         {
-            playerChar.GetComponentInChildren<PlayerUI>().ToggleButtons();
             playerChar.toggleReticle(true);
         }
 
@@ -147,6 +146,10 @@ public class GameManager : MonoBehaviour
         if(actionQueue.Count > 0)
         {
             actionQueue[0].Command();
+            if (actionQueue[0].lastCommand)
+            {
+                actionQueue[0].sender.currentBattleState = BattleActor.BattleState.waitingForOrders;
+            }
             actionQueue.RemoveAt(0);
             actionPlaying = false;
         }

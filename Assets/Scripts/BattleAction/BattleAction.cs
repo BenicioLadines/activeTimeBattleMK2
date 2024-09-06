@@ -12,6 +12,7 @@ public abstract class BattleAction : ScriptableObject
     [SerializeField]public int SPcost;
     [SerializeField]string displayName;
     [SerializeField] public string animationName;
+    public bool lastCommand;
 
     public abstract void Command();
 
@@ -20,6 +21,5 @@ public abstract class BattleAction : ScriptableObject
         sender.currentHP -= HPcost;
         sender.currentMP -= MPcost;
     }
-
 
 }

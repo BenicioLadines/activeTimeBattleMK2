@@ -18,20 +18,25 @@ public class GoblinBehavior : EnemyActor
 
         if(currentSP > 2)
         {
-            BattleAction newAction = Instantiate(actions[0]);
-            newAction.target = gameManager.playerActors[0];
-            newAction.sender = this;
-            gameManager.actionQueue.Add(newAction);
-            currentSP -= 1;
+
+            AddCommand(actions[0]);
+            commandsEntered[0].target = gameManager.playerActors[0];
+            SubmitCommands();
+
         }
 
     }
 
     public override void Death()
     {
-        EnemyDeath deathAction = new EnemyDeath();
+        EnemyDeath deathAction = (EnemyDeath) ScriptableObject.CreateInstance("EnemyDeath");
         deathAction.sender = this;
         gameManager.actionQueue.Insert(1, deathAction);
+    }
+
+    private void OnDestroy()
+    {
+        OnDeath();
     }
 
 

@@ -15,6 +15,25 @@ public abstract class BattleActor : MonoBehaviour
     public IntEvent MPchanged;
     public UnityEvent actionEnded;
     [SerializeField] int _maxHP;
+    public enum BattleState { waitingToAct, waitingForOrders }
+    public BattleState _currentBattleState;
+    public BattleState currentBattleState 
+    {  
+        get { return _currentBattleState; } 
+        set {
+            switch(value)
+            {
+                case BattleState.waitingToAct:
+                    regainingStamina = false;
+                    break;
+                case BattleState.waitingForOrders:
+                    regainingStamina = true;
+                    break;
+                default: break;
+            }
+            _currentBattleState = value;
+        }
+    }
     public int maxHP {  
         get { return _maxHP; }
         set { _maxHP = value; }
@@ -135,6 +154,7 @@ public abstract class BattleActor : MonoBehaviour
         currentMP = _maxMP;
         currentSP = 0;
         staminaBarProgress = 0;
+        currentBattleState = BattleState.waitingForOrders;
     }
 
     protected void BattleActorUpdate()
@@ -158,5 +178,52 @@ public abstract class BattleActor : MonoBehaviour
     }
 
     public abstract void Death();
+
+    public void AddCommand(BattleAction action)
+    {
+        BattleAction newAction = Instantiate(action);
+        newAction.sender = this;
+        commandsEntered.Add(newAction);
+        if(commandsEntered.Count < 2)
+        {
+            commandsEntered[0].lastCommand = true;
+        }
+        else
+        {
+            commandsEntered[commandsEntered.Count - 2].lastCommand = false;
+            commandsEntered[commandsEntered.Count - 1].lastCommand = true;
+        }
+    }
+
+    public void ClearCommands()
+    {
+        commandsEntered.Clear();
+    }
+
+    public void SubmitCommands()
+    {
+
+        if(commandsEntered.Count == 0) 
+        {
+            return;
+        }
+
+        int totalSPcost = 0;
+        foreach (BattleAction action in commandsEntered)
+        {
+            totalSPcost += action.SPcost;
+        }
+
+        if (currentSP - totalSPcost < -actionLimit || currentSP < 0)
+        {
+            Debug.Log("cant submit!");
+            ClearCommands();
+            return;
+        }
+        currentSP -= totalSPcost;
+        gameManager.actionQueue.AddRange(commandsEntered);
+        currentBattleState = BattleState.waitingToAct;
+        ClearCommands();
+    }
 
 }

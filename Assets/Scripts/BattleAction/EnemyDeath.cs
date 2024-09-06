@@ -5,17 +5,15 @@ using UnityEngine;
 [CreateAssetMenu]
 public class EnemyDeath : BattleAction
 {
-    GameManager gameManager;
 
     public EnemyDeath()
     {
         animationName = "deathAnim";
-        gameManager = FindObjectOfType<GameManager>();
     }
 
     public override void Command()
     {
-        gameManager.enemyActors.Remove((EnemyActor)sender);
+        Debug.Log("deid");
         Destroy(sender.gameObject);
     }
 }

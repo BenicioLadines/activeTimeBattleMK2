@@ -37,10 +37,8 @@ public class PlayerActor : BattleActor
 
     public void OnActionSelected(int actionIndex)
     {
-        BattleAction newAction = Instantiate(actions[actionIndex]);
-        newAction.sender = this;
-        commandsEntered.Add(newAction);
-
+        AddCommand(actions[actionIndex]);
+        playerUI.ToggleButtons();
     }
 
     public void OnTargetSelected(BattleActor target)
@@ -53,49 +51,9 @@ public class PlayerActor : BattleActor
         }
     }
 
-    public void SubmitCommands()
-    {
-        int totalSPcost = 0;
-        foreach(BattleAction action in commandsEntered)
-        {
-            totalSPcost += action.SPcost;
-        }
+    
 
-        if(currentSP - totalSPcost < -actionLimit || currentSP < 0)
-        {
-            Debug.Log("cant submit!");
-            ClearCommands();
-            return;
-        }
-        currentSP -= totalSPcost;
-        gameManager.actionQueue.AddRange(commandsEntered);
-        ClearCommands();
-    }
-
-    /*public void EnterActionQueue()
-    {
-        int totalSPcost = 0;
-        foreach (BattleAction action in commandsEntered)
-        {
-            totalSPcost += action.SPcost;
-        }
-
-        if (currentSP - totalSPcost < -actionLimit || currentSP < 0)
-        {
-            Debug.Log("cant submit!");
-            ClearCommands();
-            return;
-        }
-        currentSP -= totalSPcost;
-        gameManager.actionQueue.AddRange(commandsEntered);
-        ClearCommands();
-    }*/
-
-    public void ClearCommands()
-    {
-        commandsEntered.Clear();
-        currentActionNum = 0;
-    }
+ 
 
     public void TogglePlayerUI()
     {
