@@ -1,69 +1,87 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class PlayerUI : MonoBehaviour
 {
-    [SerializeField] Slider HPbar;
-    [SerializeField] TextMeshProUGUI HPtext;
-    [SerializeField] Slider MPbar;
-    [SerializeField] TextMeshProUGUI MPtext;
-    [SerializeField] Slider staminaBar;
-    [SerializeField] TextMeshProUGUI SPcounter;
-    [SerializeField] Button[] actionButtons = new Button[5];
-    [SerializeField] Button submitButton;
-    [SerializeField] Button cancelButton;
+    [SerializeField]TextMeshProUGUI HPText;
+    [SerializeField]TextMeshProUGUI MPText;
+    [SerializeField]TextMeshProUGUI SPText;
+    [SerializeField]Slider HPbar;
+    [SerializeField]Slider MPBar;
+    [SerializeField]Slider StaminaBar;
+    [SerializeField] GameObject actions;
+    [SerializeField] GameObject actionSlots;
+    public List<Button> actionButtons;
+    List<Image> actionSlotImages = new List<Image>();
+    [SerializeField] Color actionSlotColor;
+    public Button confirmButton;
+    public Button cancelButton;
 
-    public void setMaxHP(int maxHP)
+    private void Start()
     {
-        HPbar.maxValue = maxHP;
-        HPbar.value = maxHP;
-        HPtext.text = maxHP + "/" + maxHP;
+        actionSlotImages.AddRange(actionSlots.GetComponentsInChildren<Image>());
+        actionButtons.AddRange(actions.GetComponentsInChildren<Button>());
     }
 
-    public void setMaxMP(int maxMP)
-    {
-        MPbar.maxValue = maxMP;
-        MPbar.value = maxMP;
-        MPtext.text = maxMP + "/" + maxMP;
-    }
-
-    public void changeHP(int HP)
-    {
-        HPbar.value = HP;
-        HPtext.text = HP + "/" + HPbar.maxValue;
-    }
-
-    public void changeMP(int MP)
-    {
-        MPbar.value = MP;
-        HPtext.text = MP + "/" + MPbar.maxValue;
-    }
-
-    public void changeStamina(float stamina)
-    {
-        staminaBar.value = stamina/100;
-    }
-
-    public void changeSP(int SP)
-    {
-        SPcounter.text = SP.ToString();
-    }
-
-    public void ToggleButtons()
+    public void EnableActions(bool enabled)
     {
         foreach (Button button in actionButtons)
         {
-
-            if(button != null)
-            {
-                button.interactable = !button.interactable;
-            }
+            button.interactable = enabled;
         }
 
-        submitButton.interactable = !submitButton.interactable;
     }
 
+    public void EnableConfirm(bool enabled) => confirmButton.interactable = enabled;
+
+    public void EnableCancel(bool enabled) => cancelButton.interactable = enabled;
+
+    public void SetMaxHP(int maxHP)
+    {
+        HPbar.maxValue = maxHP;
+    }
+
+    public void ChangeHP(int newHP)
+    {
+        HPbar.value = newHP;
+    }
+
+    public void SetMaxMP(int maxMP)
+    {
+        MPBar.maxValue = maxMP;
+    }
+
+    public void ChangeMP(int newMP)
+    {
+        MPBar.value = newMP;
+    }
+
+    public void ChangeSP(int newSP)
+    {
+        SPText.text = newSP.ToString();
+    }
+
+    public void ChangeStamina(float newStamina)
+    {
+        StaminaBar.value = newStamina;
+    }
+
+    public void ChangeCurrentActionSlots(int newValue)
+    {
+        for(int i = 0; i < actionSlotImages.Count; i++)
+        {
+            if (i >= newValue)
+            {
+                actionSlotImages[i].color = Color.black;
+            }
+            else
+            {
+                actionSlotImages[i].color = actionSlotColor;
+            }
+        }
+    }
 }

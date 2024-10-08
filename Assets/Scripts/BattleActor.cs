@@ -3,171 +3,151 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-public abstract class BattleActor : MonoBehaviour
+public class BattleActor : MonoBehaviour
 {
-
-    public List<BattleAction> commandsEntered = new List<BattleAction>();
-    protected GameManager gameManager;
-    public Animator animator;
-    public FloatEvent staminaChanged;
-    public IntEvent SPchanged;
-    public IntEvent HPchanged;
-    public IntEvent MPchanged;
-    public UnityEvent actionEnded;
-    [SerializeField] int _maxHP;
-    public enum BattleState { waitingToAct, waitingForOrders }
-    public BattleState _currentBattleState;
-    public BattleState currentBattleState 
-    {  
-        get { return _currentBattleState; } 
-        set {
-            switch(value)
-            {
-                case BattleState.waitingToAct:
-                    regainingStamina = false;
-                    break;
-                case BattleState.waitingForOrders:
-                    regainingStamina = true;
-                    break;
-                default: break;
-            }
-            _currentBattleState = value;
-        }
-    }
-    public int maxHP {  
-        get { return _maxHP; }
-        set { _maxHP = value; }
-    }
+    GameManager gameManager;
+    [SerializeField]public int maxHP;
     int _currentHP;
-    public int currentHP
-    {
-        get { return _currentHP; }
-        set
-        {
-            if (value <= 0)
-            {
-
-                _currentHP = 0;
-                Death();
-            }
-            else if(value > maxHP)
-            {
-                _currentHP = maxHP;
-            }
-            else
-            {
-                _currentHP = value;
-            }
-            HPchanged.Invoke(_currentHP);
-        }
+    public int currentHP 
+    {  
+        get => _currentHP;
+        set => SetHP(value);
     }
-    [SerializeField] int _maxMP;
-    public int maxMP { 
-        get { return _maxMP; }
-        set { _maxMP = value; }
-    }
+    [SerializeField] public int maxMP;
     int _currentMP;
     public int currentMP
     {
-        get { return _currentMP; }
-        set
-        {
-            if(value < 0)
-            {
-                _currentMP = 0;
-            }
-            else if (value > maxMP)
-            {
-                _currentMP = maxMP;
-            }
-            else
-            {
-                _currentMP= value;
-            }
-            MPchanged.Invoke(_currentMP);
-        }
+        get => _currentMP;
+        set => SetMP(value);
     }
-    [SerializeField] int _maxSP;
-    public int maxSP
-    {
-        get { return _maxSP; }
-        set { _maxSP = value; }
-    }
-    [SerializeField] protected int actionLimit;
+    [SerializeField]public int maxSP;
     int _currentSP;
     public int currentSP
     {
-        get { return _currentSP; }
-        set
+        get => _currentSP;
+        set => SetSP(value);
+    }
+    float _currentStaminaPercent;
+    public float currentStaminaPercent
+    {
+        get => _currentStaminaPercent;
+        set => SetStamina(value);
+    }
+    public UnityEvent Death;
+    public UnityEvent applyAction;
+    public UnityEvent animationEnded;
+    public bool regainingStamina;
+    public int attackPower;
+    public int magicPower;
+    public IntEvent hpChanged;
+    public IntEvent mpChanged;
+    public IntEvent spChanged;
+    public FloatEvent staminaChanged;
+    public List<BattleAction> actions;
+    public List<BattleAction> enteredCommands;
+    public Animator animator;
+    public GameObject selectionReticle;
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+        gameManager = FindObjectOfType<GameManager>();
+        currentHP = maxHP;
+        currentMP = maxMP;
+        currentSP = 0;
+        currentStaminaPercent = 0f;
+    }
+
+    public void regainStamina(float change)
+    {
+        currentStaminaPercent += change;
+    }
+
+    void SetHP(int newHP)
+    {
+        if (newHP <= 0)
         {
-            if(value < -actionLimit)
+            _currentHP = 0;
+            hpChanged.Invoke(_currentHP);
+            Death.Invoke();
+            return;
+        }
+        
+        if (newHP > maxHP)
+        {
+            _currentHP = maxHP;
+            hpChanged.Invoke(_currentHP);
+            return;
+        }
+
+        _currentHP = newHP;
+        hpChanged.Invoke(_currentHP);
+    }
+
+    void SetMP(int newMP)
+    {
+        if (newMP <= 0)
+        {
+            _currentMP = 0;
+            mpChanged.Invoke(_currentMP);
+            return;
+        }
+
+        if(newMP > maxMP)
+        {
+            _currentMP = maxMP;
+            mpChanged.Invoke(_currentMP);
+            return;
+        }
+
+        _currentMP = newMP;
+        mpChanged.Invoke(_currentMP);
+    }
+
+    void SetSP(int newSP)
+    {
+        if(newSP <= -maxSP)
+        {
+            _currentSP = -maxSP;
+            spChanged.Invoke(_currentSP);
+            return;
+        }
+
+        if(newSP > maxSP)
+        {
+            _currentSP = maxSP;
+            spChanged.Invoke(_currentSP);
+            return;
+        }
+
+        _currentSP = newSP;
+        spChanged.Invoke(_currentSP);
+    }
+
+    void SetStamina(float newStamina)
+    {
+        if(newStamina >= 100f)
+        {
+            _currentStaminaPercent = 0;
+            currentSP++;
+            staminaChanged.Invoke(_currentStaminaPercent);
+            if(currentSP == maxSP)
             {
-                _currentSP = -actionLimit;
-            }
-            else if(value >= maxSP)
-            {
-                _currentSP = maxSP;
                 regainingStamina = false;
             }
-            else
-            {
-                _currentSP = value;
-                regainingStamina = true;
-            }
-            SPchanged.Invoke(_currentSP);
+            return;
         }
-    }
-    float _staminaBarProgress;
-    public float staminaBarProgress
-    {
-        get { return _staminaBarProgress; }
-        set
-        {
-            if(value >= 100)
-            {
-                currentSP++;
-                _staminaBarProgress = 0;
-                /*if(currentSP == maxSP)
-                {
-                    _staminaBarProgress = 100;
-                }*/
-            }
-            else if(value < 0)
-            {
-                _staminaBarProgress = 0;
-            }
-            else
-            {
-                _staminaBarProgress = value;
-            }
-            staminaChanged.Invoke(_staminaBarProgress);
-        }
-    }
-    [SerializeField] protected float staminaRefill;
-    bool regainingStamina = true;
-    [SerializeField]protected BattleAction[] actions;
-    [SerializeField]GameObject selectionReticle;
 
-    public void initStats()
-    {
-        currentHP = _maxHP;
-        currentMP = _maxMP;
-        currentSP = 0;
-        staminaBarProgress = 0;
-        currentBattleState = BattleState.waitingForOrders;
+        _currentStaminaPercent = newStamina;
+        staminaChanged.Invoke(_currentStaminaPercent);
+
     }
 
-    protected void BattleActorUpdate()
+    public void toggleReticle(bool enabled)
     {
-        if(regainingStamina)
-        {
-            staminaBarProgress += staminaRefill * Time.deltaTime;
-        }
-    }
-
-    public void toggleReticle(bool on)
-    {
-        if(on)
+        if (enabled)
         {
             selectionReticle.SetActive(true);
         }
@@ -177,53 +157,61 @@ public abstract class BattleActor : MonoBehaviour
         }
     }
 
-    public abstract void Death();
-
     public void AddCommand(BattleAction action)
     {
         BattleAction newAction = Instantiate(action);
         newAction.sender = this;
-        commandsEntered.Add(newAction);
-        if(commandsEntered.Count < 2)
+        enteredCommands.Add(newAction);
+        if (enteredCommands.Count < 2)
         {
-            commandsEntered[0].lastCommand = true;
+            enteredCommands[0].lastCommand = true;
         }
         else
         {
-            commandsEntered[commandsEntered.Count - 2].lastCommand = false;
-            commandsEntered[commandsEntered.Count - 1].lastCommand = true;
+            enteredCommands[enteredCommands.Count - 2].lastCommand = false;
+            enteredCommands[enteredCommands.Count - 1].lastCommand = true;
         }
+    }
+
+    public bool SubmitActions()
+    {
+        if (enteredCommands.Count == 0)
+        {
+            Debug.Log("nothing to submit!");
+            return false;
+        }
+
+        int totalSPcost = 0;
+        foreach (BattleAction action in enteredCommands)
+        {
+            totalSPcost += action.SPCost;
+        }
+
+        if (currentSP - totalSPcost < -maxSP || currentSP < 0)
+        {
+            Debug.Log("cant submit!");
+            ClearCommands();
+            return false;
+        }
+        currentSP -= totalSPcost;
+        gameManager.actionQueue.AddRange(enteredCommands);
+        ClearCommands();
+        return true;
+    }
+
+    public void SubmitWithPriority()
+    {
+        gameManager.actionQueue.InsertRange(1, enteredCommands);
     }
 
     public void ClearCommands()
     {
-        commandsEntered.Clear();
+        enteredCommands.Clear();
     }
 
-    public void SubmitCommands()
+    void ApplyAction()
     {
-
-        if(commandsEntered.Count == 0) 
-        {
-            return;
-        }
-
-        int totalSPcost = 0;
-        foreach (BattleAction action in commandsEntered)
-        {
-            totalSPcost += action.SPcost;
-        }
-
-        if (currentSP - totalSPcost < -actionLimit || currentSP < 0)
-        {
-            Debug.Log("cant submit!");
-            ClearCommands();
-            return;
-        }
-        currentSP -= totalSPcost;
-        gameManager.actionQueue.AddRange(commandsEntered);
-        currentBattleState = BattleState.waitingToAct;
-        ClearCommands();
+        applyAction.Invoke();
     }
 
 }
